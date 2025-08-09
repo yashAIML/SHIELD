@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHIELD - Women's Safety Command Center</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #00ffff; /* Cyan for futuristic theme */
+    --primary-dark: #0088cc;
+    --danger: #ff0066;
+    --danger-dark: #cc0052;
+    --warning: #ff9900;
+    --warning-dark: #cc7a00;
+    --success: #00ff88;
+    --success-dark: #00cc6a;
+    --info: #00aaff;
+    --dark: #0a0a1a;
+    --darker: #050510;
+    --dark-light: #1a1a2e;
+    --border: #2a2a4e;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+  
+  body { 
+    font-family: 'Rajdhani', 'Segoe UI', sans-serif; 
+    margin: 0; 
+    background: var(--darker);
+    color: #fff; 
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+  }
+  
+  /* Futuristic web-like background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(0, 255, 255, 0.05) 0%, transparent 20%),
+      radial-gradient(circle at 90% 80%, rgba(255, 0, 102, 0.05) 0%, transparent 20%),
+      radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 30%),
+      linear-gradient(45deg, rgba(10, 10, 26, 0.9) 0%, rgba(5, 5, 16, 0.95) 100%);
+    z-index: -2;
+  }
+  
+  /* Grid overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: -1;
+    animation: grid-move 20s linear infinite;
+  }
+  
+  @keyframes grid-move {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
+  }
+  
+  /* Particles */
+  .particles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+  }
+  
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 50%;
+    opacity: 0.5;
+    animation: float 15s infinite linear;
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(100vh) translateX(0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.5;
+    }
+    90% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(-100vh) translateX(100px);
+      opacity: 0;
+    }
+  }
+  
+  header { 
+    background: linear-gradient(90deg, rgba(0,10,26,0.8), rgba(0,5,16,0.9));
+    padding: 20px 30px; 
+    font-size: 2em;
+    font-weight: bold; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+  }
+  
+  header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 0%,
+      rgba(0, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    animation: shine 8s infinite linear;
+    z-index: -1;
+  }
+  
+  @keyframes shine {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .shield-title {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    background: linear-gradient(to right, var(--primary), var(--info), var(--primary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    position: relative;
+    display: inline-block;
+    font-size: 1.3em;
+  }
+  
+  .shield-acronym {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.5em;
+    display: block;
+    letter-spacing: 2px;
+    margin-top: 5px;
+    color: rgba(0, 255, 255, 0.8);
+  }
+  
+  .shield-title::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+  }
+  
+  .header-controls {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .header-controls button {
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 0.7em;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Smaller font size for refresh button text */
+  .header-controls button#refresh-btn {
+    font-size: 0.6em;
+    padding: 10px 15px;
+  }
+  
+  .header-controls button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  .header-controls button:hover::before {
+    left: 100%;
+  }
+  
+  .header-controls button:hover {
+    background: rgba(0, 255, 255, 0.2);
+    transform: translateY(-3px);
+  }
+  
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 30px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+  }
+  
+  .kpi { 
+    border-radius: 15px; 
+    padding: 25px; 
+    text-align: center; 
+    color: white; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    background: rgba(10, 10, 26, 0.7);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+  }
+  
+  .kpi::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle,
+      rgba(0, 255, 255, 0.1) 0%,
+      transparent 70%
+    );
+    animation: pulse 4s infinite ease-in-out;
+    z-index: -1;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+  
+  .kpi.bg-red::before {
+    background: linear-gradient(to right, transparent, var(--danger), transparent);
+  }
+  
+  .kpi.bg-orange::before {
+    background: linear-gradient(to right, transparent, var(--warning), transparent);
+  }
+  
+  .kpi.bg-blue::before {
+    background: linear-gradient(to right, transparent, var(--info), transparent);
+  }
+  
+  .kpi.bg-green::before {
+    background: linear-gradient(to right, transparent, var(--success), transparent);
+  }
+  
+  .kpi:hover { 
+    transform: translateY(-8px) rotateX(5deg);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+    border-color: rgba(0, 255, 255, 0.5);
+  }
+  
+  .kpi h2 { 
+    margin: 10px 0; 
+    font-size: 2.5em; 
+    animation: pop 0.5s ease; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+  }
+  
+  .kpi p { 
+    margin: 0; 
+    font-size: 1em; 
+    opacity: 0.9;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  
+  .kpi .trend {
+    font-size: 0.9em;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .kpi .trend.up {
+    color: var(--danger);
+  }
+  
+  .kpi .trend.down {
+    color: var(--success);
+  }
+  
+  .bg-blue { 
+    background: linear-gradient(135deg, rgba(0, 102, 204, 0.2), rgba(0, 170, 255, 0.2)); 
+    border-color: rgba(0, 170, 255, 0.3);
+  }
+  .bg-blue h2 { color: var(--info); }
+  
+  .bg-red { 
+    background: linear-gradient(135deg, rgba(204, 0, 82, 0.2), rgba(255, 0, 102, 0.2)); 
+    border-color: rgba(255, 0, 102, 0.3);
+  }
+  .bg-red h2 { color: var(--danger); }
+  
+  .bg-orange { 
+    background: linear-gradient(135deg, rgba(204, 122, 0, 0.2), rgba(255, 153, 0, 0.2)); 
+    border-color: rgba(255, 153, 0, 0.3);
+  }
+  .bg-orange h2 { color: var(--warning); }
+  
+  .bg-green { 
+    background: linear-gradient(135deg, rgba(0, 204, 106, 0.2), rgba(0, 255, 136, 0.2)); 
+    border-color: rgba(0, 255, 136, 0.3);
+  }
+  .bg-green h2 { color: var(--success); }
+  
+  @keyframes pop { 
+    0% { transform: scale(0.9); } 
+    100% { transform: scale(1); } 
+  }
+  
+  .content-section {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+  }
+  
+  .panel {
+    background: rgba(10, 10, 26, 0.7); 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: all 0.4s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+  }
+  
+  .panel:hover {
+    box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+    border-color: rgba(0, 255, 255, 0.5);
+    transform: translateY(-5px);
+  }
+  
+  .panel h3 { 
+    margin-top: 0; 
+    margin-bottom: 20px;
+    color: var(--primary); 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 1.2em;
+  }
+  
+  #map { 
+    height: 450px; 
+    border-radius: 15px; 
+    overflow: hidden; 
+    border: 1px solid var(--border);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    transition: all 0.4s ease;
+    background: rgba(5, 5, 16, 0.8);
+    z-index: 1;
+  }
+  
+  #map:hover {
+    box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.3);
+    border-color: var(--primary);
+  }
+  
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 0.95em; 
+  }
+  
+  th, td { 
+    padding: 15px 20px; 
+    border-bottom: 1px solid var(--border); 
+    text-align: left;
+  }
+  
+  th { 
+    background: rgba(5, 5, 16, 0.8); 
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    color: var(--primary);
+    text-transform: uppercase;
+    font-size: 0.85em;
+    font-weight: 700;
+  }
+  
+  tr:hover { 
+    background: rgba(0, 255, 255, 0.05); 
+  }
+  
+  .priority-high { color: var(--danger); font-weight: bold; }
+  .priority-medium { color: var(--warning); font-weight: bold; }
+  .priority-low { color: var(--success); font-weight: bold; }
+  
+  button { 
+    background: rgba(0, 255, 255, 0.1); 
+    color: var(--primary); 
+    border: 1px solid var(--primary); 
+    padding: 10px 20px; 
+    border-radius: 30px; 
+    cursor: pointer; 
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.75em;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
+  }
+  
+  button:hover::before {
+    left: 100%;
+  }
+  
+  button:hover { 
+    background: rgba(0, 255, 255, 0.2); 
+    transform: translateY(-3px);
+  }
+  
+  button.danger {
+    background: rgba(255, 0, 102, 0.1);
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  
+  button.danger:hover {
+    background: rgba(255, 0, 102, 0.2);
+  }
+  
+  button.warning {
+    background: rgba(255, 153, 0, 0.1);
+    color: var(--warning);
+    border-color: var(--warning);
+  }
+  
+  button.warning:hover {
+    background: rgba(255, 153, 0, 0.2);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .action-buttons button {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 15px;
+    font-size: 0.65em;
+  }
+  
+  /* Smaller font size for dispatch button text */
+  .action-buttons button:first-child {
+    background: rgba(0, 255, 136, 0.1);
+    color: var(--success);
+    border-color: var(--success);
+    font-size: 0.6em;
+    padding: 8px 10px;
+  }
+  
+  .action-buttons button:first-child:hover {
+    background: rgba(0, 255, 136, 0.2);
+  }
+  
+  .action-buttons button:last-child {
+    background: rgba(255, 0, 102, 0.1);
+    color: var(--danger);
+    border-color: var(--danger);
+    font-size: 0.6em;
+    padding: 8px 10px;
+  }
+  
+  .action-buttons button:last-child:hover {
+    background: rgba(255, 0, 102, 0.2);
+  }
+  
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+  
+  .agent-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .agent-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--primary);
+  }
+  
+  .agent-item:hover {
+    background: rgba(0, 255, 255, 0.1);
+    transform: translateX(8px);
+    border-color: rgba(0, 255, 255, 0.3);
+  }
+  
+  .agent-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: var(--dark);
+    flex-shrink: 0;
+    font-size: 1.2em;
+  }
+  
+  .agent-details {
+    flex: 1;
+  }
+  
+  .agent-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    letter-spacing: 1px;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary);
+  }
+  
+  .agent-status {
+    font-size: 0.8em;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .status-online {
+    color: var(--success);
+  }
+  
+  .status-busy {
+    color: var(--danger);
+  }
+  
+  .status-away {
+    color: var(--warning);
+  }
+  
+  .notification {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: rgba(10, 10, 26, 0.9);
+    padding: 20px 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transform: translateX(150%);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000;
+    border-left: 5px solid var(--danger);
+    backdrop-filter: blur(10px);
+    max-width: 400px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+  }
+  
+  .notification.show {
+    transform: translateX(0);
+  }
+  
+  .notification-icon {
+    font-size: 2em;
+    flex-shrink: 0;
+  }
+  
+  .notification-danger {
+    border-left-color: var(--danger);
+  }
+  
+  .notification-danger .notification-icon {
+    color: var(--danger);
+  }
+  
+  .notification-warning {
+    border-left-color: var(--warning);
+  }
+  
+  .notification-warning .notification-icon {
+    color: var(--warning);
+  }
+  
+  .notification-info {
+    border-left-color: var(--primary);
+  }
+  
+  .notification-info .notification-icon {
+    color: var(--primary);
+  }
+  
+  .notification-content {
+    flex: 1;
+  }
+  
+  .notification-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    font-size: 1em;
+    color: var(--primary);
+  }
+  
+  .notification-message {
+    font-size: 0.9em;
+    opacity: 0.9;
+    line-height: 1.5;
+  }
+  
+  .chart-container {
+    height: 250px;
+    margin-top: 15px;
+    position: relative;
+  }
+  
+  .team-info {
+    background: rgba(10, 10, 26, 0.7);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    margin-top: 25px;
+  }
+  
+  .team-info h3 {
+    color: var(--primary);
+    font-family: 'Orbitron', sans-serif;
+    margin-top: 0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 700;
+  }
+  
+  .team-members {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .team-member {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid var(--primary);
+    transition: all 0.3s ease;
+  }
+  
+  .team-member:hover {
+    background: rgba(0, 255, 255, 0.1);
+    transform: translateX(5px);
+  }
+  
+  .team-member-name {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--primary);
+    font-family: 'Orbitron', sans-serif;
+  }
+  
+  .team-member-role {
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+  
+  .emergency-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .emergency-type {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .emergency-type::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--primary), transparent);
+  }
+  
+  .emergency-type:hover {
+    background: rgba(0, 255, 255, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 255, 255, 0.2);
+  }
+  
+  .emergency-type i {
+    font-size: 2em;
+    margin-bottom: 10px;
+    color: var(--primary);
+  }
+  
+  .emergency-type-name {
+    font-size: 0.9em;
+    font-weight: 500;
+  }
+  
+  /* Alert icons */
+  .alert-icon {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  
+  .alert-icon i {
+    font-size: 1.3em;
+  }
+  
+  .alert-icon-danger i {
+    color: var(--danger);
+  }
+  
+  .alert-icon-warning i {
+    color: var(--warning);
+  }
+  
+  .alert-icon-success i {
+    color: var(--success);
+  }
+  
+  @media (max-width: 1200px) {
+    .content-section {
+      grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+  }
+  
+  @media (max-width: 768px) {
+    header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+      padding: 15px 20px;
+    }
+    
+    .header-controls {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .main-container {
+      padding: 20px;
+    }
+    
+    .emergency-types {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+    
+    /* Even smaller font size for buttons on mobile */
+    .action-buttons button {
+      font-size: 0.55em;
+      padding: 6px 8px;
+    }
+    
+    .header-controls button {
+      font-size: 0.55em;
+      padding: 8px 12px;
+    }
+  }
+  
+  /* Pulse animation */
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  /* Distress signal animation */
+  @keyframes distress {
+    0% { background-color: rgba(255, 0, 102, 0.1); }
+    50% { background-color: rgba(255, 0, 102, 0.3); }
+    100% { background-color: rgba(255, 0, 102, 0.1); }
+  }
+  
+  .distress-signal {
+    animation: distress 1s infinite;
+  }
+  
+  /* Holographic effect */
+  .holographic {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .holographic::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
+    transform: rotate(45deg);
+    animation: holographic-shine 3s infinite;
+  }
+  
+  @keyframes holographic-shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+  }
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<header>
+  <div>
+    <div class="shield-title">SHIELD</div>
+    <div class="shield-acronym">Smart Hand-Eye Integrated Emergency Live Detection</div>
+  </div>
+  <div class="header-controls">
+    <button id="refresh-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+    <button id="alert-btn"><i class="fas fa-bell"></i> Test Alert</button>
+  </div>
+</header>
+
+<div class="main-container">
+  <div class="dashboard-grid">
+    <div class="kpi bg-red holographic">
+      <p>Active Distress Signals</p>
+      <h2 id="kpi-distress">0</h2>
+      <div class="trend up">
+        <i class="fas fa-arrow-up"></i> 8%
+      </div>
+    </div>
+    <div class="kpi bg-orange holographic">
+      <p>Potential Threats</p>
+      <h2 id="kpi-threats">0</h2>
+      <div class="trend up">
+        <i class="fas fa-arrow-up"></i> 12%
+      </div>
+    </div>
+    <div class="kpi bg-blue holographic">
+      <p>Police Responses</p>
+      <h2 id="kpi-responses">0</h2>
+      <div class="trend down">
+        <i class="fas fa-arrow-down"></i> 5%
+      </div>
+    </div>
+    <div class="kpi bg-green holographic">
+      <p>Resolved Cases</p>
+      <h2 id="kpi-resolved">0</h2>
+      <div class="trend up">
+        <i class="fas fa-arrow-up"></i> 15%
+      </div>
+    </div>
+  </div>
+
+  <div class="content-section">
+    <div class="main-content">
+      <div class="panel">
+        <h3><i class="fas fa-map-marked-alt"></i> Women's Safety Heatmap - Vadodara</h3>
+        <div id="map"></div>
+      </div>
+      <div class="panel">
+        <h3>Active Distress Alerts</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Priority</th>
+              <th>Location</th>
+              <th>Distance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="alert-table"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="sidebar">
+      <div class="panel">
+        <h3><i class="fas fa-chart-line"></i> Threat Activity</h3>
+        <div class="chart-container" id="activity-chart"></div>
+      </div>
+      
+      <div class="panel">
+        <h3><i class="fas fa-user-shield"></i> Emergency Types</h3>
+        <div class="emergency-types">
+          <div class="emergency-type">
+            <i class="fas fa-exclamation"></i>
+            <div class="emergency-type-name">Harassment</div>
+          </div>
+          <div class="emergency-type">
+            <i class="fas fa-running"></i>
+            <div class="emergency-type-name">Stalking</div>
+          </div>
+          <div class="emergency-type">
+            <i class="fas fa-hand-paper"></i>
+            <div class="emergency-type-name">Assault</div>
+          </div>
+          <div class="emergency-type">
+            <i class="fas fa-map-marker-alt"></i>
+            <div class="emergency-type-name">Lost Person</div>
+          </div>
+          <div class="emergency-type">
+            <i class="fas fa-ambulance"></i>
+            <div class="emergency-type-name">Medical</div>
+          </div>
+          <div class="emergency-type">
+            <i class="fas fa-phone-alt"></i>
+            <div class="emergency-type-name">No Phone</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <h3><i class="fas fa-user-shield"></i> Response Teams</h3>
+        <ul class="agent-list" id="agent-list"></ul>
+      </div>
+      
+      <div class="team-info">
+        <h3><i class="fas fa-users"></i> Team ShieldAI</h3>
+        <div class="team-members">
+          <div class="team-member">
+            <div class="team-member-name">RINKU PURKAR</div>
+            <div class="team-member-role">AI/ML Developer (Team Lead)</div>
+          </div>
+          <div class="team-member">
+            <div class="team-member-name">MAYURI YADDULA</div>
+            <div class="team-member-role">UI/UX & Frontend Developer</div>
+          </div>
+          <div class="team-member">
+            <div class="team-member-name">RISHU RAJAN</div>
+            <div class="team-member-role">Backend & Cloud Engineer</div>
+          </div>
+          <div class="team-member">
+            <div class="team-member-name">YASH RAUNDAL</div>
+            <div class="team-member-role">Data Analytics & Monitoring</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification">
+  <div class="notification-icon">
+    <i class="fas fa-exclamation-circle"></i>
+  </div>
+  <div class="notification-content">
+    <div class="notification-title">DISTRESS SIGNAL DETECTED</div>
+    <div class="notification-message">Potential assault reported near Sector 5. Nearest team dispatched.</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Create animated particles
+  function createParticles() {
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 50;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.animationDelay = Math.random() * 15 + 's';
+      particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+      particlesContainer.appendChild(particle);
+    }
+  }
+  
+  // Initialize map with women's safety theme
+  let map;
+  let markers = [];
+  
+  function initMap() {
+    // Create map with proper attribution - focused on Vadodara, Gujarat
+    map = L.map('map', {
+      zoomControl: true,
+      attributionControl: true
+    }).setView([22.3072, 73.1812], 12); // Vadodara coordinates
+    
+    // Add dark map tiles with attribution
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+  }
+  
+  // Notification system
+  function showNotification(type, title, message) {
+    const notification = document.getElementById('notification');
+    notification.className = `notification ${type} show`;
+    notification.querySelector('.notification-title').textContent = title;
+    notification.querySelector('.notification-message').textContent = message;
+    
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 5000);
+  }
+  
+  // Test alert button
+  document.getElementById('alert-btn').addEventListener('click', () => {
+    const types = ['notification-danger', 'notification-warning', 'notification-info'];
+    const titles = ['DISTRESS SIGNAL', 'SAFETY ALERT', 'SYSTEM UPDATE'];
+    const messages = [
+      'Potential harassment detected near Market Street. Police notified.',
+      'Stalking incident reported in Park Area. Response team en route.',
+      'System upgrade complete. All safety features operational.'
+    ];
+    
+    const random = Math.floor(Math.random() * 3);
+    showNotification(types[random], titles[random], messages[random]);
+    
+    // Add visual effect to the button
+    const btn = document.getElementById('alert-btn');
+    btn.innerHTML = '<i class="fas fa-bell"></i> Alert Sent';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-bell"></i> Test Alert';
+    }, 2000);
+  });
+  
+  // Refresh button
+  document.getElementById('refresh-btn').addEventListener('click', () => {
+    updateAllData();
+    showNotification('notification-info', 'SYSTEM', 'Data refresh complete. All systems operational.');
+    
+    // Add visual effect to the button
+    const btn = document.getElementById('refresh-btn');
+    btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+    }, 1000);
+  });
+  
+  // Activity chart
+  let activityChart;
+  function initActivityChart() {
+    const ctx = document.getElementById('activity-chart').getContext('2d');
+    activityChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array(24).fill().map((_, i) => `${i}:00`),
+        datasets: [
+          {
+            label: 'Distress Signals',
+            data: Array(24).fill().map(() => Math.floor(Math.random() * 100)),
+            borderColor: '#00ffff',
+            backgroundColor: 'rgba(0, 255, 255, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#00ffff',
+            pointBorderColor: '#fff',
+            pointHoverRadius: 8,
+            pointRadius: 4,
+            pointBorderWidth: 2
+          },
+          {
+            label: 'Response Teams',
+            data: Array(24).fill().map(() => Math.floor(Math.random() * 50)),
+            borderColor: '#00aaff',
+            backgroundColor: 'rgba(0, 170, 255, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#00aaff',
+            pointBorderColor: '#fff',
+            pointHoverRadius: 8,
+            pointRadius: 4,
+            pointBorderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#fff',
+              font: {
+                family: 'Orbitron, sans-serif',
+                size: 12,
+                weight: 'bold'
+              },
+              padding: 20
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(10, 10, 26, 0.9)',
+            titleColor: '#00ffff',
+            bodyColor: '#fff',
+            borderColor: '#00ffff',
+            borderWidth: 1,
+            displayColors: false,
+            titleFont: {
+              family: 'Orbitron, sans-serif',
+              weight: 'bold'
+            },
+            bodyFont: {
+              family: 'Rajdhani, sans-serif'
+            },
+            padding: 12
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              color: 'rgba(0, 255, 255, 0.1)',
+              drawBorder: false
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)',
+              font: {
+                family: 'Rajdhani, sans-serif'
+              }
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(0, 255, 255, 0.1)',
+              drawBorder: false
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)',
+              font: {
+                family: 'Rajdhani, sans-serif'
+              }
+            }
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        }
+      }
+    });
+  }
+  
+  // Response teams list
+  const teamNames = [
+    {name: 'Police Rapid Response', codename: 'Alpha Team'},
+    {name: 'Women\'s Safety Patrol', codename: 'Guardian Unit'},
+    {name: 'Medical First Responders', codename: 'Medic Team'},
+    {name: 'CCTV Monitoring', codename: 'Watchtower'},
+    {name: 'Community Volunteers', codename: 'Local Heroes'}
+  ];
+  
+  function updateAgentList() {
+    const agentList = document.getElementById('agent-list');
+    agentList.innerHTML = '';
+    
+    const shuffledTeams = [...teamNames].sort(() => 0.5 - Math.random()).slice(0, 5);
+    
+    shuffledTeams.forEach(team => {
+      const statuses = ['online', 'busy', 'away'];
+      const status = statuses[Math.floor(Math.random() * 3)];
+      const initials = team.codename.split(' ').map(n => n[0]).join('');
+      
+      const li = document.createElement('li');
+      li.className = 'agent-item';
+      li.innerHTML = `
+        <div class="agent-avatar">${initials}</div>
+        <div class="agent-details">
+          <div class="agent-name">${team.codename}</div>
+          <div class="agent-status status-${status}">
+            <i class="fas fa-circle"></i> ${status.toUpperCase()} • ${team.name}
+          </div>
+        </div>
+        <i class="fas fa-chevron-right" style="opacity:0.5;"></i>
+      `;
+      
+      agentList.appendChild(li);
+    });
+  }
+  
+  // KPI updates with animations
+  function updateKPIs() {
+    const distress = Math.floor(Math.random() * 15);
+    const threats = Math.floor(Math.random() * 25);
+    const responses = Math.floor(Math.random() * 10);
+    const resolved = Math.floor(Math.random() * 8);
+    
+    animateValue('kpi-distress', parseInt(document.getElementById('kpi-distress').textContent) || 0, distress);
+    animateValue('kpi-threats', parseInt(document.getElementById('kpi-threats').textContent) || 0, threats);
+    animateValue('kpi-responses', parseInt(document.getElementById('kpi-responses').textContent) || 0, responses);
+    animateValue('kpi-resolved', parseInt(document.getElementById('kpi-resolved').textContent) || 0, resolved);
+    
+    // Randomly show notifications for significant changes
+    if (distress > 10 && Math.random() > 0.7) {
+      showNotification('notification-danger', 'CRITICAL ALERT', `${distress} ACTIVE DISTRESS SIGNALS - INCREASE PATROLS`);
+    }
+  }
+  
+  function animateValue(id, start, end) {
+    const duration = 800;
+    const obj = document.getElementById(id);
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const value = Math.floor(progress * (end - start) + start);
+      obj.textContent = value;
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+    
+    // Add pulse effect
+    obj.style.transform = 'scale(1.2)';
+    obj.style.transition = 'transform 0.3s ease';
+    setTimeout(() => {
+      obj.style.transform = 'scale(1)';
+    }, 300);
+  }
+  
+  // Map updates with safety markers
+  function updateMap() {
+    // Clear existing markers
+    markers.forEach(marker => map.removeLayer(marker));
+    markers = [];
+    
+    // Add safe zones (green)
+    for (let i = 0; i < 3; i++) {
+      const lat = 22.3072 + (Math.random() - 0.5) * 0.03;
+      const lon = 73.1812 + (Math.random() - 0.5) * 0.03;
+      
+      const marker = L.circleMarker([lat, lon], {
+        radius: 15, 
+        color: '#00ff88',
+        fillColor: '#00ff88',
+        fillOpacity: 0.5,
+        weight: 1
+      }).bindPopup(`
+        <div style="text-align:center;">
+          <div style="font-size:1.2em;margin-bottom:5px;color:#00ff88">
+            <i class="fas fa-shield-alt"></i>
+            SAFE ZONE
+          </div>
+          <div><b>Location:</b> Police Booth ${i+1}</div>
+          <div><b>Status:</b> Active patrol</div>
+        </div>
+      `).addTo(map);
+      
+      markers.push(marker);
+    }
+    
+    // Add threat markers
+    for (let i = 0; i < 5; i++) {
+      const lat = 22.3072 + (Math.random() - 0.5) * 0.05;
+      const lon = 73.1812 + (Math.random() - 0.5) * 0.05;
+      const severity = Math.random();
+      const color = severity > 0.7 ? '#ff0066' : severity > 0.4 ? '#ff9900' : '#ffcc00';
+      const size = 8 + severity * 12;
+      const types = ['Harassment', 'Stalking', 'Assault', 'Distress Signal', 'Suspicious Activity'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      const marker = L.circleMarker([lat, lon], {
+        radius: size, 
+        color,
+        fillColor: color,
+        fillOpacity: 0.7,
+        weight: 1
+      }).bindPopup(`
+        <div style="text-align:center;">
+          <div style="font-size:1.2em;margin-bottom:5px;color:${color}">
+            <i class="fas ${type === 'Harassment' ? 'fa-exclamation' : type === 'Stalking' ? 'fa-running' : type === 'Assault' ? 'fa-hand-paper' : 'fa-exclamation-triangle'}"></i>
+            ${type.toUpperCase()}
+          </div>
+          <div><b>Severity:</b> ${(severity * 10).toFixed(1)}/10</div>
+          <div><b>Location:</b> Sector ${Math.ceil(Math.random() * 8)}</div>
+          <div><b>Reported:</b> ${new Date().toLocaleTimeString()}</div>
+        </div>
+      `).addTo(map);
+      
+      markers.push(marker);
+      
+      // Add pulse animation to high severity markers
+      if (severity > 0.7) {
+        setInterval(() => {
+          if (marker && marker.setStyle) {
+            marker.setStyle({
+              fillOpacity: marker.options.fillOpacity === 0.7 ? 0.3 : 0.7
+            });
+          }
+        }, 1000);
+      }
+    }
+  }
+  
+  // Alert table with safety incidents
+  function updateAlerts() {
+    const table = document.getElementById('alert-table');
+    table.innerHTML = '';
+    
+    const alertTypes = [
+      { type: 'Harassment', priority: 'high', icon: 'fa-exclamation' },
+      { type: 'Stalking', priority: 'high', icon: 'fa-running' },
+      { type: 'Assault', priority: 'high', icon: 'fa-hand-paper' },
+      { type: 'Distress Signal', priority: 'medium', icon: 'fa-exclamation-triangle' },
+      { type: 'Suspicious Activity', priority: 'medium', icon: 'fa-binoculars' },
+      { type: 'Lost Person', priority: 'low', icon: 'fa-user-minus' }
+    ];
+    
+    const regions = [
+      'Sayajigunj', 'Alkapuri', 'Manjalpur', 'Karelibaug', 
+      'Makarpura', 'Vadsar', 'Harni', 'Sama'
+    ];
+    
+    for (let i = 0; i < 5; i++) {
+      const alert = alertTypes[Math.floor(Math.random() * alertTypes.length)];
+      const region = regions[Math.floor(Math.random() * regions.length)];
+      const time = new Date();
+      time.setMinutes(time.getMinutes() - Math.floor(Math.random() * 60));
+      const distance = (Math.random() * 2).toFixed(1);
+      
+      const tr = document.createElement('tr');
+      if (alert.priority === 'high') {
+        tr.classList.add('distress-signal');
+      }
+      
+      // Determine icon class based on priority
+      let iconClass = '';
+      let iconElement = '';
+      if (alert.priority === 'high') {
+        iconClass = 'alert-icon-danger';
+        iconElement = '<i class="fas fa-exclamation"></i>';
+      } else if (alert.priority === 'medium') {
+        iconClass = 'alert-icon-warning';
+        iconElement = '<i class="fas fa-exclamation-triangle"></i>';
+      } else {
+        iconClass = 'alert-icon-success';
+        iconElement = '<i class="fas fa-check"></i>';
+      }
+      
+      tr.innerHTML = `
+        <td>${time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+        <td>
+          <span class="alert-icon ${iconClass}">${iconElement}</span>
+          ${alert.type}
+        </td>
+        <td class="priority-${alert.priority}">${alert.priority.toUpperCase()}</td>
+        <td>${region}</td>
+        <td>${distance} km</td>
+        <td>
+          <div class="action-buttons">
+            <button onclick="handleAlertAction('dispatch', this)"><i class="fas fa-paper-plane"></i> Dispatch</button>
+            <button onclick="handleAlertAction('dismiss', this)"><i class="fas fa-times"></i></button>
+          </div>
+        </td>
+      `;
+      table.appendChild(tr);
+    }
+  }
+  
+  // Global function for alert actions
+  window.handleAlertAction = function(action, button) {
+    const row = button.closest('tr');
+    const typeCell = row.cells[1];
+    const type = typeCell.textContent.trim();
+    const region = row.cells[3].textContent;
+    
+    if (action === 'dispatch') {
+      showNotification('notification-info', 'TEAM DISPATCHED', `Response team en route to ${region} for ${type}`);
+      row.style.opacity = '0.6';
+      button.disabled = true;
+      button.innerHTML = '<i class="fas fa-check"></i> Dispatched';
+      button.style.background = 'rgba(0, 255, 136, 0.2)';
+      button.style.borderColor = '#00ff88';
+      button.style.color = '#00ff88';
+      row.classList.remove('distress-signal');
+    } else if (action === 'dismiss') {
+      row.style.transition = 'all 0.5s ease';
+      row.style.transform = 'translateX(100%) rotate(5deg)';
+      row.style.opacity = '0';
+      setTimeout(() => row.remove(), 500);
+      showNotification('notification-warning', 'ALERT ARCHIVED', `${type} in ${region} has been resolved`);
+    }
+  };
+  
+  // Initialize all data
+  function updateAllData() {
+    updateKPIs();
+    updateMap();
+    updateAlerts();
+    updateAgentList();
+    updateActivityChart();
+  }
+  
+  function updateActivityChart() {
+    if (activityChart) {
+      activityChart.data.datasets.forEach(dataset => {
+        dataset.data = dataset.data.map(() => Math.floor(Math.random() * 100));
+      });
+      activityChart.update();
+    }
+  }
+  
+  // Initial setup
+  window.addEventListener('DOMContentLoaded', () => {
+    createParticles();
+    initMap();
+    initActivityChart();
+    updateAllData();
+    
+    // Periodic updates
+    setInterval(() => {
+      updateAllData();
+      
+      // Occasionally show random notifications
+      if (Math.random() > 0.8) {
+        const types = ['notification-danger', 'notification-warning', 'notification-info'];
+        const titles = ['SAFETY ALERT', 'SYSTEM UPDATE', 'PATROL REPORT'];
+        const messages = [
+          'Increased harassment reports in Alkapuri - increasing patrols',
+          'New safety zone activated near Sayajigunj',
+          'Response team completed training on new protocols',
+          'Emergency phone kiosk reported offline in Manjalpur - technician dispatched',
+          'Community safety workshop scheduled for tomorrow in Karelibaug'
+        ];
+        
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const randomTitle = titles[Math.floor(Math.random() * types.length)];
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        
+        showNotification(randomType, randomTitle, randomMessage);
+      }
+    }, 5000);
+  });
+</script>
+</body>
+</html>
